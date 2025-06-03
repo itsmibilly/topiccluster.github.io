@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Topic Explorer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f9fc;
+      color: #2c3e50;
+      padding: 2rem;
+    }
+
+    h2 {
+      color: #0033a0;
+    }
+
+    label {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+
+    select {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    select:focus {
+      border-color: #0033a0;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 51, 160, 0.5);
+    }
+
+    ul {
+      list-style: disc;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    .container {
+      max-width: 600px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo"><img src="logo-orange.png" alt="Bombora Logo" style="max-width:160px; height:auto; display:block; margin:auto; margin-bottom:20px;"></div>
+    <h2>Select Category and Subcategory</h2>
+
+    <label for="category">Category:</label>
+    <select id="category" onchange="updateSubcategories()">
+      <option value="">-- Select Category --</option>
+    </select>
+
+    <br>
+
+    <label for="subcategory">Subcategory:</label>
+    <select id="subcategory" onchange="showTopics()">
+      <option value="">-- Select Subcategory --</option>
+    </select>
+
+    <br><br>
+
+    <h3>Topics:</h3>
+    <ul id="topics"></ul>
+  </div>
+
+  <script>
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSFXF92iqoXGmwIGETlLFsh9tum9a0sbuIHLgD53c-W-4gB-GCs8TKKT6lUN_LuFpjOxg-iG5YRngHV/pub?gid=0&single=true&output=csv';
+
+    const categorySelect = document.getElementById('category');
+    const subcategorySelect = document.getElementById('subcategory');
+    const topicsList = document.getElementById('topics');
+    const dataMap = {};
+
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(csvText => {
+        const lines = csvText.trim().split('\n');
+        lines.shift(); // remove header
+
+        lines.forEach(line => {
+          const [category, subcategory, topic] = line.split(',');
+
+          if (!dataMap[category]) {
+            dataMap[category] = {};
+          }
+          if (!dataMap[category][subcategory]) {
+            dataMap[category][subcategory] = [];
+          }
+          dataMap[category][subcategory].push(topic);
+        });
+
+        // Populate categories
+        for (const category in dataMap) {
+          const option = document.createElement('option');
+          option.value = category;
+          option.textContent = category;
+          categorySelect.appendChild(option);
+        }
+      })
+      .catch(error => console.error('Failed to fetch CSV:', error));
+
+    function updateSubcategories() {
+      const selectedCategory = categorySelect.value;
+      subcategorySelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
+      topicsList.innerHTML = '';
+
+      if (dataMap[selectedCategory]) {
+        for (const subcategory in dataMap[selectedCategory]) {
+          const option = document.createElement('option');
+          option.value = subcategory;
+          option.textContent = subcategory;
+          subcategorySelect.appendChild(option);
+        }
+      }
+    }
+
+    function showTopics() {
+      const selectedCategory = categorySelect.value;
+      const selectedSubcategory = subcategorySelect.value;
+      topicsList.innerHTML = '';
+
+      if (dataMap[selectedCategory] && dataMap[selectedCategory][selectedSubcategory]) {
+        dataMap[selectedCategory][selectedSubcategory].forEach(topic => {
+          const li = document.createElement('li');
+          li.textContent = topic;
+          topicsList.appendChild(li);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
